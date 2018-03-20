@@ -1,6 +1,6 @@
 const path = require('path');
 
-module.exports = {
+module.exports = (env, argv) => ({
   entry: './src/index.js',
   output: {
     filename: 'bundle.js',
@@ -18,10 +18,10 @@ module.exports = {
         options: {
           verbose: true,
           warn: true,
-          debug: true
+          debug: argv.mode === 'development'
         }
       }
     ],
     noParse: [/.elm$/]
   }
-};
+});

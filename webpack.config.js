@@ -8,5 +8,20 @@ module.exports = {
   },
   devServer: {
     contentBase: path.resolve(__dirname, 'dist')
+  },
+  module: {
+    rules: [
+      {
+        test: /\.elm$/,
+        exclude: [/elm-stuff/, /node_modules/],
+        loader: 'elm-webpack-loader',
+        options: {
+          verbose: true,
+          warn: true,
+          debug: true
+        }
+      }
+    ],
+    noParse: [/.elm$/]
   }
 };

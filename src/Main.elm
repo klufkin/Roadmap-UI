@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput, onClick)
+import Html.Events exposing (onInput, onClick, onBlur)
 import Dom exposing (..)
 import Task
 import Array exposing (..)
@@ -49,6 +49,7 @@ type Msg
     = NoOp
     | Add Int
     | Update Int String
+    | Delete Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -91,6 +92,13 @@ update msg model =
             in
                 ( { model | posts = Array.map updatePost model.posts }, Cmd.none )
 
+        Delete id ->
+            let
+                removePost post =
+                    post.id /= id
+            in
+                ( { model | posts = Array.filter removePost model.posts }, Cmd.none )
+
 
 
 -- SUBSCRIPTIONS
@@ -130,6 +138,12 @@ postView post index =
                 [ autofocus True
                 , id ("post-" ++ toString post.id)
                 , onInput (Update post.id)
+                , onBlur
+                    (if String.length post.description == 0 then
+                        Delete post.id
+                     else
+                        NoOp
+                    )
                 , value post.description
                 ]
                 []

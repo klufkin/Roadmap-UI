@@ -116,21 +116,23 @@ view model =
 
 addBtn : Int -> Html Msg
 addBtn index =
-    div []
+    div [ class "add-btn" ]
         [ button [ onClick (Add index) ]
-            [ text "add" ]
+            [ text "+" ]
         ]
 
 
 postView : Post -> Int -> Html Msg
 postView post index =
     div []
-        [ textarea
-            [ autofocus True
-            , id ("post-" ++ toString post.id)
-            , onInput (Update post.id)
-            , value post.description
+        [ div [ class "post-container" ]
+            [ textarea
+                [ autofocus True
+                , id ("post-" ++ toString post.id)
+                , onInput (Update post.id)
+                , value post.description
+                ]
+                []
             ]
-            []
         , addBtn (index + 1)
         ]

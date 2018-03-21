@@ -2,3 +2,34 @@ html,
 body {
   background-color: aquamarine;
 }
+
+h1 {
+  color: rgb(0, 217, 255);
+}
+
+textarea {
+  background: #68faff;
+  color: #1178d2;
+  font-size: 14px;
+  border: none;
+  outline: none;
+}
+
+.add-btn > button {
+  border-radius: 100%;
+  outline: none;
+  color: royalblue;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.post-container {
+  margin-left: 11px;
+  border-left: 2px solid rgb(0, 217, 255);
+  padding-left: 20px;
+  display: flex;
+}

@@ -1,8 +1,11 @@
 module Main exposing (..)
 
 import Html exposing (..)
+import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick)
-import Random exposing (..)
+import Dom exposing (..)
+import Task
+import Array exposing (..)
 
 
 main : Program Never Model Msg
@@ -19,13 +22,23 @@ main =
 -- MODEL
 
 
+type alias Post =
+    { id : Int, description : String }
+
+
 type alias Model =
-    { dieFace : Int }
+    { uid : Int
+    , posts : Array Post
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model 1, Cmd.none )
+    ( { uid = 0
+      , posts = fromList [ { id = 0, description = "first" } ]
+      }
+    , Cmd.none
+    )
 
 
 
@@ -33,18 +46,50 @@ init =
 
 
 type Msg
-    = Roll
-    | NewFace Int
+    = NoOp
+    | Add Int
+    | Update Int String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Roll ->
-            ( model, Random.generate NewFace (Random.int 1 6) )
+        NoOp ->
+            ( model, Cmd.none )
 
-        NewFace newFace ->
-            ( Model newFace, Cmd.none )
+        Add index ->
+            let
+                start =
+                    slice 0 index model.posts
+
+                length =
+                    Array.length model.posts
+
+                end =
+                    slice index length model.posts
+
+                newID =
+                    model.uid + 1
+
+                updatedPosts =
+                    append (push { id = newID, description = "" } start) end
+
+                focus =
+                    Dom.focus ("post-" ++ toString newID)
+            in
+                ( { model | uid = newID, posts = updatedPosts }
+                , Task.attempt (\_ -> NoOp) focus
+                )
+
+        Update id texts ->
+            let
+                updatePost post =
+                    if post.id == id then
+                        { post | description = texts }
+                    else
+                        post
+            in
+                ( { model | posts = Array.map updatePost model.posts }, Cmd.none )
 
 
 
@@ -63,6 +108,29 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div []
-        [ h1 [] [ text (toString model.dieFace) ]
-        , button [ onClick Roll ] [ text "Roll" ]
+        [ h1 [] [ text "Road Map" ]
+        , addBtn 0
+        , div [] (List.map (\( index, post ) -> postView post index) (toIndexedList model.posts))
+        ]
+
+
+addBtn : Int -> Html Msg
+addBtn index =
+    div []
+        [ button [ onClick (Add index) ]
+            [ text "add" ]
+        ]
+
+
+postView : Post -> Int -> Html Msg
+postView post index =
+    div []
+        [ textarea
+            [ autofocus True
+            , id ("post-" ++ toString post.id)
+            , onInput (Update post.id)
+            , value post.description
+            ]
+            []
+        , addBtn (index + 1)
         ]

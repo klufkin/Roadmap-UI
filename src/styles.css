@@ -8,6 +8,7 @@ h1 {
 }
 
 textarea {
+  min-width: 320px;
   background: #68faff;
   color: #1178d2;
   font-size: 14px;

@@ -5,7 +5,6 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick, onBlur)
 import Dom exposing (..)
 import Task
-import Array exposing (..)
 
 
 main : Program Never Model Msg
@@ -28,14 +27,14 @@ type alias Post =
 
 type alias Model =
     { uid : Int
-    , posts : Array Post
+    , posts : List Post
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { uid = 0
-      , posts = fromList [ { id = 0, description = "first" } ]
+      , posts = [ { id = 0, description = "first" } ]
       }
     , Cmd.none
     )
@@ -61,19 +60,19 @@ update msg model =
         Add index ->
             let
                 start =
-                    slice 0 index model.posts
+                    List.take index model.posts
 
                 length =
-                    Array.length model.posts
+                    List.length model.posts
 
                 end =
-                    slice index length model.posts
+                    List.drop index model.posts
 
                 newID =
                     model.uid + 1
 
                 updatedPosts =
-                    append (push { id = newID, description = "" } start) end
+                    List.concat [ start, [ { id = newID, description = "" } ], end ]
 
                 focus =
                     Dom.focus ("post-" ++ toString newID)
@@ -90,14 +89,14 @@ update msg model =
                     else
                         post
             in
-                ( { model | posts = Array.map updatePost model.posts }, Cmd.none )
+                ( { model | posts = List.map updatePost model.posts }, Cmd.none )
 
         Delete id ->
             let
                 removePost post =
                     post.id /= id
             in
-                ( { model | posts = Array.filter removePost model.posts }, Cmd.none )
+                ( { model | posts = List.filter removePost model.posts }, Cmd.none )
 
 
 
@@ -118,7 +117,7 @@ view model =
     div []
         [ h1 [] [ text "Road Map" ]
         , addBtn 0
-        , div [] (List.map (\( index, post ) -> postView post index) (toIndexedList model.posts))
+        , div [] (List.map (\( index, post ) -> postView post index) (List.indexedMap (,) model.posts))
         ]
 
 

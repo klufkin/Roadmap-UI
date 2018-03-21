@@ -2,10 +2,12 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput, onClick, onBlur)
+import Html.Events exposing (onInput, onClick, onBlur, on)
+import Json.Decode as Json
 import Dom exposing (..)
 import Task
 import List exposing (map, filter, indexedMap, take, drop, concat)
+import Mouse
 
 
 main : Program Never Model Msg
@@ -26,9 +28,17 @@ type alias Post =
     { id : Int, description : String }
 
 
+type alias PostDrag =
+    { start : Mouse.Position
+    , current : Mouse.Position
+    , postIndex : Int
+    }
+
+
 type alias Model =
     { uid : Int
     , posts : List Post
+    , postDrag : Maybe PostDrag
     }
 
 
@@ -36,6 +46,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { uid = 0
       , posts = [ { id = 0, description = "first" } ]
+      , postDrag = Nothing
       }
     , Cmd.none
     )
@@ -50,11 +61,14 @@ type Msg
     | Add Int
     | Update Int String
     | Delete Int
+    | PostDragStart Int Mouse.Position
+    | PostDragging Mouse.Position
+    | PostDragEnd Mouse.Position
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "msg" msg of
         NoOp ->
             ( model, Cmd.none )
 
@@ -99,6 +113,20 @@ update msg model =
             in
                 ( { model | posts = filter removePost model.posts }, Cmd.none )
 
+        PostDragStart index xy ->
+            ( { model | postDrag = Just <| PostDrag xy xy index }, Cmd.none )
+
+        PostDragging xy ->
+            ( { model | postDrag = Maybe.map (getCurrentPosition xy) model.postDrag }, Cmd.none )
+
+        PostDragEnd xy ->
+            ( { model | postDrag = Nothing }, Cmd.none )
+
+
+getCurrentPosition : Mouse.Position -> PostDrag -> PostDrag
+getCurrentPosition xy postDrag =
+    { postDrag | current = xy }
+
 
 
 -- SUBSCRIPTIONS
@@ -106,7 +134,15 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    case model.postDrag of
+        Nothing ->
+            Sub.none
+
+        Just postDrag ->
+            Sub.batch
+                [ Mouse.moves PostDragging
+                , Mouse.ups PostDragEnd
+                ]
 
 
 
@@ -118,7 +154,7 @@ view model =
     div []
         [ h1 [] [ text "Road Map" ]
         , addBtn 0
-        , div [] (List.map postView (indexedMap (,) model.posts))
+        , div [] (indexedMap postView model.posts)
         ]
 
 
@@ -130,9 +166,11 @@ addBtn index =
         ]
 
 
-postView : ( Int, Post ) -> Html Msg
-postView ( index, post ) =
-    div []
+postView : Int -> Post -> Html Msg
+postView index post =
+    div
+        [ on "mousedown" <| Json.map (PostDragStart index) Mouse.position
+        ]
         [ div [ class "post-container" ]
             [ textarea
                 [ autofocus True

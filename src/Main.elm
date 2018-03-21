@@ -5,6 +5,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick, onBlur)
 import Dom exposing (..)
 import Task
+import List exposing (map, filter, indexedMap, take, drop, concat)
 
 
 main : Program Never Model Msg
@@ -60,19 +61,19 @@ update msg model =
         Add index ->
             let
                 start =
-                    List.take index model.posts
+                    take index model.posts
 
                 length =
                     List.length model.posts
 
                 end =
-                    List.drop index model.posts
+                    drop index model.posts
 
                 newID =
                     model.uid + 1
 
                 updatedPosts =
-                    List.concat [ start, [ { id = newID, description = "" } ], end ]
+                    concat [ start, [ { id = newID, description = "" } ], end ]
 
                 focus =
                     Dom.focus ("post-" ++ toString newID)
@@ -96,7 +97,7 @@ update msg model =
                 removePost post =
                     post.id /= id
             in
-                ( { model | posts = List.filter removePost model.posts }, Cmd.none )
+                ( { model | posts = filter removePost model.posts }, Cmd.none )
 
 
 
@@ -117,7 +118,7 @@ view model =
     div []
         [ h1 [] [ text "Road Map" ]
         , addBtn 0
-        , div [] (List.map (\( index, post ) -> postView post index) (List.indexedMap (,) model.posts))
+        , div [] (List.map postView (indexedMap (,) model.posts))
         ]
 
 
@@ -129,8 +130,8 @@ addBtn index =
         ]
 
 
-postView : Post -> Int -> Html Msg
-postView post index =
+postView : ( Int, Post ) -> Html Msg
+postView ( index, post ) =
     div []
         [ div [ class "post-container" ]
             [ textarea

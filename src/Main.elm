@@ -162,17 +162,25 @@ view model =
                 -- Finds the selected Maybe Post and passes on
                 |> Maybe.andThen (\{ postIndex } -> getPostByIndex postIndex model.posts)
                 -- transform int0 Maybe Html msg
-                |> Maybe.map viewDraggingPost
+                |> Maybe.map (viewDraggingPost model.postDrag)
                 -- if Nothing set Default to empty string
                 |> Maybe.withDefault (text "")
             ]
         ]
 
 
-viewDraggingPost : Post -> Html msg
-viewDraggingPost post =
-    div [ class "post-container dragging-post" ]
-        [ textarea [ value post.description ] [] ]
+viewDraggingPost : Maybe PostDrag -> Post -> Html msg
+viewDraggingPost postDrag post =
+    case postDrag of
+        Just { current } ->
+            div
+                [ class "post-container dragging-post"
+                , style [ ( "top", px current.y ), ( "left", px current.x ) ]
+                ]
+                [ textarea [ value post.description ] [] ]
+
+        Nothing ->
+            text ""
 
 
 viewPosts : List Post -> Html Msg
@@ -220,3 +228,7 @@ getPostByIndex : Int -> List Post -> Maybe Post
 getPostByIndex index posts =
     List.drop index posts
         |> List.head
+
+
+px int =
+    toString int ++ "px"

@@ -39,6 +39,7 @@ textarea {
   border-left-color: rgba(0, 0, 0, 0);
   position: absolute;
   margin-left: 0;
+  padding-left: 0;
 }
 
 .dragging-post textarea {

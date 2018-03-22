@@ -62,13 +62,13 @@ type Msg
     | Update Int String
     | Delete Int
     | PostDragStart Int Mouse.Position
-    | PostDragging Mouse.Position
-    | PostDragEnd Mouse.Position
+    | PostDragging PostDrag Mouse.Position
+    | PostDragEnd PostDrag Mouse.Position
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "msg" msg of
+    case msg of
         NoOp ->
             ( model, Cmd.none )
 
@@ -116,16 +116,99 @@ update msg model =
         PostDragStart index xy ->
             ( { model | postDrag = Just <| PostDrag xy xy index }, Cmd.none )
 
-        PostDragging xy ->
-            ( { model | postDrag = Maybe.map (getCurrentPosition xy) model.postDrag }, Cmd.none )
+        PostDragging postDrag xy ->
+            ( { model | postDrag = Just <| getCurrentPosition xy postDrag }, Cmd.none )
 
-        PostDragEnd xy ->
-            ( { model | postDrag = Nothing }, Cmd.none )
+        PostDragEnd postDrag xy ->
+            model
+                |> dropPost postDrag xy
+
+
+
+-- ( { model | postDrag = Nothing }, Cmd.none )
 
 
 getCurrentPosition : Mouse.Position -> PostDrag -> PostDrag
 getCurrentPosition xy postDrag =
     { postDrag | current = xy }
+
+
+shiftPosts : Int -> Int -> List Post -> List Post
+shiftPosts newIndex selectedIndex posts =
+    let
+        beforeSelected selectedIndex =
+            List.take selectedIndex posts
+
+        betweenSelectedAndDrop selectedIndex dropIndex =
+            posts
+                |> List.drop (selectedIndex + 1)
+                |> List.take (dropIndex - selectedIndex)
+
+        -- selectedPost =
+        --     List.drop selectedIndex posts
+        --         |> List.head
+        afterDrop dropIndex =
+            List.drop (dropIndex + 1) posts
+
+        shiftDown selectedPost selectedIndex dropIndex =
+            List.concat
+                [ beforeSelected selectedIndex
+                , betweenSelectedAndDrop selectedIndex dropIndex
+                , [ selectedPost ]
+                , Debug.log "AfterDrop" (afterDrop dropIndex)
+                ]
+    in
+        case
+            List.drop selectedIndex posts
+                |> List.head
+        of
+            Just post ->
+                shiftDown post selectedIndex newIndex
+
+            Nothing ->
+                posts
+
+
+dropPost : PostDrag -> Mouse.Position -> Model -> ( Model, Cmd msg )
+dropPost { start, postIndex } end model =
+    let
+        dy =
+            end.y - start.y
+
+        postHeight =
+            62
+
+        offSetFromPrevPost =
+            start.y % postHeight
+
+        distToNextPost =
+            postHeight - offSetFromPrevPost
+
+        movingDown =
+            dy > 0
+
+        movingUp =
+            dy < 0
+
+        crossedToPrev =
+            dy > offSetFromPrevPost
+
+        crossedToNext =
+            abs dy > distToNextPost
+
+        screenTopOffset =
+            80
+
+        newIndex =
+            Debug.log "newIndex" ((end.y - screenTopOffset) // postHeight)
+
+        newPosts =
+            if (movingUp && crossedToPrev) || (movingDown && crossedToNext) then
+                shiftPosts newIndex postIndex model.posts
+            else
+                model.posts
+    in
+        ( { model | posts = newPosts, postDrag = Nothing }, Cmd.none )
 
 
 
@@ -140,8 +223,8 @@ subscriptions model =
 
         Just postDrag ->
             Sub.batch
-                [ Mouse.moves PostDragging
-                , Mouse.ups PostDragEnd
+                [ Mouse.moves (PostDragging postDrag)
+                , Mouse.ups (PostDragEnd postDrag)
                 ]
 
 
@@ -199,9 +282,11 @@ addBtn index =
 postView : Int -> Post -> Html Msg
 postView index post =
     div
-        [ on "mousedown" <| Json.map (PostDragStart index) Mouse.position
-        ]
-        [ div [ class "post-container" ]
+        []
+        [ div
+            [ class "post-container"
+            , on "mousedown" <| Json.map (PostDragStart index) Mouse.position
+            ]
             [ textarea
                 [ autofocus True
                 , id ("post-" ++ toString post.id)

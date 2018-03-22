@@ -156,17 +156,15 @@ view model =
         , addBtn 0
         , div []
             [ viewPosts model.posts
-            , case model.postDrag of
-                Just { postIndex } ->
-                    case getPostByIndex postIndex model.posts of
-                        Just post ->
-                            viewDraggingPost post
 
-                        Nothing ->
-                            text ""
-
-                Nothing ->
-                    text ""
+            -- pass Maybe PostDrag value to 'andThen'
+            , model.postDrag
+                -- Finds the selected Maybe Post and passes on
+                |> Maybe.andThen (\{ postIndex } -> getPostByIndex postIndex model.posts)
+                -- transform int0 Maybe Html msg
+                |> Maybe.map viewDraggingPost
+                -- if Nothing set Default to empty string
+                |> Maybe.withDefault (text "")
             ]
         ]
 

@@ -154,8 +154,32 @@ view model =
     div []
         [ h1 [] [ text "Road Map" ]
         , addBtn 0
-        , div [] (indexedMap postView model.posts)
+        , div []
+            [ viewPosts model.posts
+            , case model.postDrag of
+                Just { postIndex } ->
+                    case getPostByIndex postIndex model.posts of
+                        Just post ->
+                            viewDraggingPost post
+
+                        Nothing ->
+                            text ""
+
+                Nothing ->
+                    text ""
+            ]
         ]
+
+
+viewDraggingPost : Post -> Html msg
+viewDraggingPost post =
+    div [ class "post-container dragging-post" ]
+        [ textarea [ value post.description ] [] ]
+
+
+viewPosts : List Post -> Html Msg
+viewPosts posts =
+    div [] (indexedMap postView posts)
 
 
 addBtn : Int -> Html Msg
@@ -188,3 +212,13 @@ postView index post =
             ]
         , addBtn (index + 1)
         ]
+
+
+
+-- HELPERS
+
+
+getPostByIndex : Int -> List Post -> Maybe Post
+getPostByIndex index posts =
+    List.drop index posts
+        |> List.head

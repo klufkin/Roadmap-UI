@@ -34,3 +34,11 @@ textarea {
   padding-left: 20px;
   display: flex;
 }
+
+.post-container.dragging-post {
+  border-left-color: rgba(0, 0, 0, 0);
+}
+
+.dragging-post textarea {
+  background-color: springgreen;
+}

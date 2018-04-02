@@ -185,9 +185,9 @@ shiftPosts newIndex selectedIndex posts =
                 posts
 
 
-textAreaHeight : Int
-textAreaHeight =
-    40
+screenTopOffset : Int
+screenTopOffset =
+    104
 
 
 postHeight : Int
@@ -195,17 +195,9 @@ postHeight =
     64
 
 
-postWidth : Int
-postWidth =
-    320
-
-
 dropPost : PostDrag -> Mouse.Position -> Model -> ( Model, Cmd msg )
 dropPost { start, postIndex } end model =
     let
-        screenTopOffset =
-            104
-
         dy =
             end.y - start.y
 
@@ -284,14 +276,21 @@ viewDraggingPost : Maybe PostDrag -> Post -> Html msg
 viewDraggingPost postDrag post =
     case postDrag of
         Just { current } ->
-            div
-                [ class "post-container dragging-post"
-                , style
-                    [ ( "top", px (current.y - (textAreaHeight // 2)) )
-                    , ( "left", px (current.x - (postWidth // 2)) )
+            let
+                textAreaHeight =
+                    40
+
+                postWidth =
+                    320
+            in
+                div
+                    [ class "post-container dragging-post"
+                    , style
+                        [ ( "top", px (current.y - (textAreaHeight // 2)) )
+                        , ( "left", px (current.x - (postWidth // 2)) )
+                        ]
                     ]
-                ]
-                [ textarea [ value post.description ] [] ]
+                    [ textarea [ value post.description ] [] ]
 
         Nothing ->
             text ""
@@ -316,13 +315,13 @@ viewPostsWhileDragging model =
 
         viewPostsWithDropZone { y } =
             let
-                position =
-                    (y - 104) // postHeight
+                dropIndex =
+                    (y - screenTopOffset) // postHeight
             in
                 List.concat
-                    [ List.take position nonDragPosts
+                    [ List.take dropIndex nonDragPosts
                     , [ viewDropZone ]
-                    , List.drop position nonDragPosts
+                    , List.drop dropIndex nonDragPosts
                     ]
     in
         div []

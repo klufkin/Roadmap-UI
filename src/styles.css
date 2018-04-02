@@ -14,6 +14,8 @@ textarea {
   font-size: 14px;
   border: none;
   outline: none;
+  border: 1px solid #14e1ea;
+  border-radius: 4px;
 }
 
 .add-btn > button {

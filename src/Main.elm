@@ -45,7 +45,11 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { uid = 0
-      , posts = [ { id = 0, description = "first" } ]
+      , posts =
+            [ { id = 0, description = "first" }
+            , { id = 1, description = "hello there" }
+            , { id = 2, description = "wowzers" }
+            ]
       , postDrag = Nothing
       }
     , Cmd.none
@@ -124,10 +128,6 @@ update msg model =
                 |> dropPost postDrag xy
 
 
-
--- ( { model | postDrag = Nothing }, Cmd.none )
-
-
 getCurrentPosition : Mouse.Position -> PostDrag -> PostDrag
 getCurrentPosition xy postDrag =
     { postDrag | current = xy }
@@ -139,31 +139,47 @@ shiftPosts newIndex selectedIndex posts =
         beforeSelected selectedIndex =
             List.take selectedIndex posts
 
-        betweenSelectedAndDrop selectedIndex dropIndex =
+        betweenShiftDown =
             posts
                 |> List.drop (selectedIndex + 1)
-                |> List.take (dropIndex - selectedIndex)
+                |> List.take (newIndex - selectedIndex)
 
-        -- selectedPost =
-        --     List.drop selectedIndex posts
-        --         |> List.head
+        betweenShiftUp =
+            posts
+                |> List.take selectedIndex
+                |> List.drop newIndex
+
         afterDrop dropIndex =
             List.drop (dropIndex + 1) posts
 
         shiftDown selectedPost selectedIndex dropIndex =
             List.concat
                 [ beforeSelected selectedIndex
-                , betweenSelectedAndDrop selectedIndex dropIndex
+                , betweenShiftDown
                 , [ selectedPost ]
-                , Debug.log "AfterDrop" (afterDrop dropIndex)
+                , afterDrop dropIndex
                 ]
+
+        shiftUp selectedPost selectedIndex dropIndex =
+            List.concat
+                [ beforeSelected dropIndex
+                , [ selectedPost ]
+                , betweenShiftUp
+                , afterDrop selectedIndex
+                ]
+
+        shift selectedIndex newIndex post =
+            if selectedIndex < newIndex then
+                shiftDown post selectedIndex newIndex
+            else
+                shiftUp post selectedIndex newIndex
     in
         case
             List.drop selectedIndex posts
                 |> List.head
         of
             Just post ->
-                shiftDown post selectedIndex newIndex
+                shift selectedIndex newIndex post
 
             Nothing ->
                 posts
@@ -191,7 +207,7 @@ dropPost { start, postIndex } end model =
             dy < 0
 
         crossedToPrev =
-            dy > offSetFromPrevPost
+            abs dy > offSetFromPrevPost
 
         crossedToNext =
             abs dy > distToNextPost
@@ -315,5 +331,6 @@ getPostByIndex index posts =
         |> List.head
 
 
+px : Int -> String
 px int =
     toString int ++ "px"

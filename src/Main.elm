@@ -185,17 +185,32 @@ shiftPosts newIndex selectedIndex posts =
                 posts
 
 
+textAreaHeight : Int
+textAreaHeight =
+    40
+
+
+postHeight : Int
+postHeight =
+    64
+
+
+postWidth : Int
+postWidth =
+    320
+
+
 dropPost : PostDrag -> Mouse.Position -> Model -> ( Model, Cmd msg )
 dropPost { start, postIndex } end model =
     let
+        screenTopOffset =
+            104
+
         dy =
             end.y - start.y
 
-        postHeight =
-            62
-
         offSetFromPrevPost =
-            start.y % postHeight
+            (start.y - screenTopOffset) % postHeight
 
         distToNextPost =
             postHeight - offSetFromPrevPost
@@ -212,11 +227,8 @@ dropPost { start, postIndex } end model =
         crossedToNext =
             abs dy > distToNextPost
 
-        screenTopOffset =
-            80
-
         newIndex =
-            Debug.log "newIndex" ((end.y - screenTopOffset) // postHeight)
+            (end.y - screenTopOffset) // postHeight
 
         newPosts =
             if (movingUp && crossedToPrev) || (movingDown && crossedToNext) then
@@ -254,13 +266,13 @@ view model =
         [ h1 [] [ text "Road Map" ]
         , addBtn 0
         , div []
-            [ viewPosts model.posts
+            [ viewPostsWhileDragging model
 
             -- pass Maybe PostDrag value to 'andThen'
             , model.postDrag
                 -- Finds the selected Maybe Post and passes on
                 |> Maybe.andThen (\{ postIndex } -> getPostByIndex postIndex model.posts)
-                -- transform int0 Maybe Html msg
+                -- transform into Maybe Html msg
                 |> Maybe.map (viewDraggingPost model.postDrag)
                 -- if Nothing set Default to empty string
                 |> Maybe.withDefault (text "")
@@ -274,7 +286,10 @@ viewDraggingPost postDrag post =
         Just { current } ->
             div
                 [ class "post-container dragging-post"
-                , style [ ( "top", px current.y ), ( "left", px current.x ) ]
+                , style
+                    [ ( "top", px (current.y - (textAreaHeight // 2)) )
+                    , ( "left", px (current.x - (postWidth // 2)) )
+                    ]
                 ]
                 [ textarea [ value post.description ] [] ]
 
@@ -282,9 +297,51 @@ viewDraggingPost postDrag post =
             text ""
 
 
+viewPostsWhileDragging : Model -> Html Msg
+viewPostsWhileDragging model =
+    let
+        posts =
+            indexedMap postView model.posts
+
+        dragIndex =
+            case model.postDrag of
+                Just post ->
+                    post.postIndex
+
+                Nothing ->
+                    -1
+
+        nonDragPosts =
+            List.concat [ List.take dragIndex posts, List.drop (dragIndex + 1) posts ]
+
+        viewPostsWithDropZone { y } =
+            let
+                position =
+                    (y - 104) // postHeight
+            in
+                List.concat
+                    [ List.take position nonDragPosts
+                    , [ viewDropZone ]
+                    , List.drop position nonDragPosts
+                    ]
+    in
+        div []
+            (model.postDrag
+                |> Maybe.map (\{ current } -> viewPostsWithDropZone current)
+                |> Maybe.withDefault posts
+            )
+
+
 viewPosts : List Post -> Html Msg
 viewPosts posts =
     div [] (indexedMap postView posts)
+
+
+viewDropZone : Html Msg
+viewDropZone =
+    div [ class "dropzone-container" ]
+        [ div [ class "dropzone" ] []
+        ]
 
 
 addBtn : Int -> Html Msg

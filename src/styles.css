@@ -18,6 +18,20 @@ textarea {
   border-radius: 4px;
 }
 
+.dropzone-container {
+  margin-left: 11px;
+  border-left: 2px solid #fa8a8a;
+  padding-left: 20px;
+}
+
+.dropzone {
+  height: 40px;
+  width: 320px;
+  background-color: rgb(248, 143, 105);
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
 .add-btn > button {
   border-radius: 100%;
   outline: none;
